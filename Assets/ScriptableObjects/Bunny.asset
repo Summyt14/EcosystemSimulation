@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af5aabc8cfaf447eb242fea6cce2ae06, type: 3}
+  m_Name: Bunny
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 7219041073935482487, guid: c03ff30d17798604bbdcfbcb3f0a31d3, type: 3}
+  initialCount: 10
+  initialSize: 1
+  initialSpeed: 5
+  initialRotationSpeed: 2
+  type: 2
+  preyList: 02000000
