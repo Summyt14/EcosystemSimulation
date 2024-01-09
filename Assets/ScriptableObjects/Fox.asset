@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Fox
   m_EditorClassIdentifier: 
   prefab: {fileID: 7219041073935482487, guid: b6a8b00a3f021c04e8bc457b111054f6, type: 3}
-  initialCount: 10
-  initialSize: 1
+  initialCount: 100
   initialSpeed: 3
   initialRotationSpeed: 2
+  initialEatDistance: 1
+  hungerDecayRate: 5
+  hungerIncreaseWhenEaten: 50
   type: 1
-  preyList: 02000000

@@ -7,10 +7,11 @@ namespace _Scripts.ScriptableObjects
     {
         public GameObject prefab;
         public int initialCount = 10;
-        public float initialSize = 1f;
         public float initialSpeed = 5f;
         public float initialRotationSpeed = 2f;
         public float initialEatDistance = 1f;
-        public Animal.AnimalType type;
+        public float hungerDecayRate = 0.1f;
+        public int hungerIncreaseWhenEaten = 50;
+        public AnimalData.AnimalType type;
     }
 }

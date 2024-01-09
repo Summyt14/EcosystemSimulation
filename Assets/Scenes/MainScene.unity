@@ -150,7 +150,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animalSoList:
-  - {fileID: 11400000, guid: 925650460ee7ff544ae9e9d77997420a, type: 2}
   - {fileID: 11400000, guid: 8f971424e099ccc4487fad319d4f865d, type: 2}
   boundsWidth: 20
   boundsHeight: 20

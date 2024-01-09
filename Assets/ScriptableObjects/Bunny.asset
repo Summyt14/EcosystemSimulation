@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Bunny
   m_EditorClassIdentifier: 
   prefab: {fileID: 7219041073935482487, guid: c03ff30d17798604bbdcfbcb3f0a31d3, type: 3}
-  initialCount: 10
-  initialSize: 1
+  initialCount: 1
   initialSpeed: 5
   initialRotationSpeed: 2
+  initialEatDistance: 1
+  hungerDecayRate: 2
+  hungerIncreaseWhenEaten: 50
   type: 2
-  preyList: 02000000

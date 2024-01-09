@@ -8,49 +8,47 @@ namespace _Scripts.Animals
     [BurstCompile]
     public struct AnimalMovementJob : IJobParallelFor
     {
-        public NativeArray<Animal> Animals;
+        public NativeArray<AnimalData> Animals;
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public int BoundsWidth;
         [ReadOnly] public int BoundsHeight;
 
         public void Execute(int index)
         {
-            Animal animal = Animals[index];
+            AnimalData animalData = Animals[index];
+            if (!animalData.IsActive) return;
 
-            if (!animal.IsActive) return;
+            HandleRandomDirectionChange(ref animalData);
+            HandleOffBounds(ref animalData);
+            RotateTowardsTarget(ref animalData);
+            SetPosition(ref animalData);
 
-            HandleRandomDirectionChange(ref animal);
-            HandleOffBounds(ref animal);
-            RotateTowardsTarget(ref animal);
-            SetPosition(ref animal);
-
-            Animals[index] = animal;
+            Animals[index] = animalData;
         }
 
-        private void HandleRandomDirectionChange(ref Animal animal)
+        private void HandleRandomDirectionChange(ref AnimalData animalData)
         {
-            float changeDirectionCooldown = animal.ChangeDirectionCooldown;
-            float3 targetDirection = animal.TargetDirection;
-            uint seed = animal.Seed;
+            float changeDirectionCooldown = animalData.ChangeDirectionCooldown;
+            float3 targetDirection = animalData.TargetDirection;
 
             changeDirectionCooldown -= DeltaTime;
             if (changeDirectionCooldown <= 0)
             {
-                Unity.Mathematics.Random random = new Unity.Mathematics.Random(seed);
+                Random random = new(animalData.Seed);
                 float angleChange = random.NextFloat(-90f, 90f);
                 quaternion newRotation = quaternion.AxisAngle(math.up(), angleChange);
                 targetDirection = math.mul(newRotation, targetDirection);
                 changeDirectionCooldown = random.NextFloat(1f, 5f);
             }
 
-            animal.ChangeDirectionCooldown = changeDirectionCooldown;
-            animal.TargetDirection = targetDirection;
+            animalData.ChangeDirectionCooldown = changeDirectionCooldown;
+            animalData.TargetDirection = targetDirection;
         }
 
-        private void HandleOffBounds(ref Animal animal)
+        private void HandleOffBounds(ref AnimalData animalData)
         {
-            float3 position = animal.Position;
-            float3 targetDirection = animal.TargetDirection;
+            float3 position = animalData.Position;
+            float3 targetDirection = animalData.TargetDirection;
 
             if ((position.x < -BoundsWidth && targetDirection.x < 0) || (position.x > BoundsWidth && targetDirection.x > 0))
                 targetDirection = new float3(-targetDirection.x, 0, targetDirection.z);
@@ -58,31 +56,25 @@ namespace _Scripts.Animals
             if ((position.z < -BoundsHeight && targetDirection.z < 0) || (position.z > BoundsHeight && targetDirection.z > 0))
                 targetDirection = new float3(targetDirection.x, 0, -targetDirection.z);
 
-            animal.TargetDirection = targetDirection;
+            animalData.TargetDirection = targetDirection;
         }
 
-        private void RotateTowardsTarget(ref Animal animal)
+        private void RotateTowardsTarget(ref AnimalData animalData)
         {
-            quaternion rotation = animal.Rotation;
-            float3 targetDirection = animal.TargetDirection;
-            float rotationSpeed = animal.RotationSpeed;
+            quaternion rotation = animalData.Rotation;
+            quaternion targetRotation = quaternion.LookRotation(animalData.TargetDirection, math.up());
+            rotation = math.slerp(rotation, targetRotation, animalData.RotationSpeed * DeltaTime);
 
-            quaternion targetRotation = quaternion.LookRotation(targetDirection, math.up());
-            rotation = math.slerp(rotation, targetRotation, rotationSpeed * DeltaTime);
-
-            animal.Rotation = rotation;
+            animalData.Rotation = rotation;
         }
 
-        private void SetPosition(ref Animal animal)
+        private void SetPosition(ref AnimalData animalData)
         {
-            float3 position = animal.Position;
-            quaternion rotation = animal.Rotation;
-            float speed = animal.Speed;
-
-            float3 newPosition = math.mul(rotation, math.forward() * speed * DeltaTime);
+            float3 position = animalData.Position;
+            float3 newPosition = math.mul(animalData.Rotation, math.forward() * animalData.Speed * DeltaTime);
             position += newPosition;
 
-            animal.Position = position;
+            animalData.Position = position;
         }
     }
 }

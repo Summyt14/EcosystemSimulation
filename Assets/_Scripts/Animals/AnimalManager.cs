@@ -1,12 +1,9 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using _Scripts.ScriptableObjects;
 using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections;
 using Unity.Mathematics;
-using Random = UnityEngine.Random;
 
 namespace _Scripts.Animals
 {
@@ -18,7 +15,7 @@ namespace _Scripts.Animals
         [SerializeField] private uint seed = 123;
 
         private int _animalCount;
-        private NativeArray<Animal> _animals;
+        private NativeArray<AnimalData> _animals;
         private List<Transform> _animalTransforms;
         private JobHandle _animalJobHandle;
 
@@ -32,10 +29,10 @@ namespace _Scripts.Animals
             foreach (AnimalSo animalSo in animalSoList)
                 _animalCount += animalSo.initialCount;
 
-            _animals = new NativeArray<Animal>(_animalCount, Allocator.Persistent);
+            _animals = new NativeArray<AnimalData>(_animalCount, Allocator.Persistent);
             _animalTransforms = new List<Transform>();
             int index = 0;
-
+            
             foreach (AnimalSo animalSo in animalSoList)
             {
                 for (int i = 0; i < animalSo.initialCount; i++)
@@ -46,8 +43,9 @@ namespace _Scripts.Animals
                     quaternion rotation = animalGo.transform.rotation;
                     float3 targetDirection = GetRandomDirection();
                     float changeDirectionCooldown = UnityEngine.Random.Range(1f, 5f);
-                    _animals[index++] = new Animal(animalSo.type, true, position, rotation, targetDirection, changeDirectionCooldown,
-                        animalSo.initialSpeed, animalSo.initialRotationSpeed, animalSo.initialEatDistance, seed);
+                    _animals[index++] = new AnimalData(animalSo.type, position, rotation, targetDirection,
+                        changeDirectionCooldown, animalSo.initialSpeed, animalSo.initialRotationSpeed, 
+                        animalSo.initialEatDistance, animalSo.hungerDecayRate, animalSo.hungerIncreaseWhenEaten, seed);
                 }
             }
         }
@@ -68,10 +66,10 @@ namespace _Scripts.Animals
 
         private void Update()
         {
-            MoveAnimals();
+            UpdateAnimals();
         }
 
-        private void MoveAnimals()
+        private void UpdateAnimals()
         {
             AnimalMovementJob animalMovementJob = new()
             {
@@ -81,13 +79,14 @@ namespace _Scripts.Animals
                 BoundsHeight = boundsHeight
             };
 
-            AnimalEatJob animalEatJob = new()
+            AnimalStatsJob animalStatsJob = new()
             {
                 Animals = _animals,
+                DeltaTime = Time.deltaTime,
             };
 
-            _animalJobHandle = animalMovementJob.Schedule(_animalCount, 32);
-            _animalJobHandle = animalEatJob.Schedule(_animalCount, 32, _animalJobHandle);
+            _animalJobHandle = animalMovementJob.Schedule(_animalCount, 32, _animalJobHandle);
+            _animalJobHandle = animalStatsJob.Schedule(_animalCount, 32, _animalJobHandle);
         }
 
         private void LateUpdate()
