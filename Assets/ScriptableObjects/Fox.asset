@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af5aabc8cfaf447eb242fea6cce2ae06, type: 3}
   m_Name: Fox
   m_EditorClassIdentifier: 
-  prefab: {fileID: 7219041073935482487, guid: b6a8b00a3f021c04e8bc457b111054f6, type: 3}
-  initialCount: 100
+  prefab: {fileID: 2206800068340054933, guid: 52eb84853498cff4c9582f2e184258fd, type: 3}
+  initialCount: 20
   initialSpeed: 3
   initialRotationSpeed: 2
   initialEatDistance: 1

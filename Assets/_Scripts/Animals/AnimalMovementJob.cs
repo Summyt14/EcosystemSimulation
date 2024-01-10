@@ -12,13 +12,14 @@ namespace _Scripts.Animals
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public int BoundsWidth;
         [ReadOnly] public int BoundsHeight;
+        [ReadOnly] public float RandomFloat;
 
         public void Execute(int index)
         {
             AnimalData animalData = Animals[index];
             if (!animalData.IsActive) return;
 
-            HandleRandomDirectionChange(ref animalData);
+            HandleRandomDirectionChange(ref animalData, RandomFloat);
             HandleOffBounds(ref animalData);
             RotateTowardsTarget(ref animalData);
             SetPosition(ref animalData);
@@ -26,7 +27,7 @@ namespace _Scripts.Animals
             Animals[index] = animalData;
         }
 
-        private void HandleRandomDirectionChange(ref AnimalData animalData)
+        private void HandleRandomDirectionChange(ref AnimalData animalData, float randomFloat)
         {
             float changeDirectionCooldown = animalData.ChangeDirectionCooldown;
             float3 targetDirection = animalData.TargetDirection;
@@ -34,11 +35,10 @@ namespace _Scripts.Animals
             changeDirectionCooldown -= DeltaTime;
             if (changeDirectionCooldown <= 0)
             {
-                Random random = new(animalData.Seed);
-                float angleChange = random.NextFloat(-90f, 90f);
+                float angleChange = math.remap(0, 100f, -90f, 90f, randomFloat);
                 quaternion newRotation = quaternion.AxisAngle(math.up(), angleChange);
                 targetDirection = math.mul(newRotation, targetDirection);
-                changeDirectionCooldown = random.NextFloat(1f, 5f);
+                changeDirectionCooldown = math.remap(0, 100f, 1f, 5f, randomFloat);
             }
 
             animalData.ChangeDirectionCooldown = changeDirectionCooldown;

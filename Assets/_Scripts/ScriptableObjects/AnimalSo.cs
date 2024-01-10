@@ -1,3 +1,4 @@
+using _Scripts.Animals;
 using UnityEngine;
 
 namespace _Scripts.ScriptableObjects

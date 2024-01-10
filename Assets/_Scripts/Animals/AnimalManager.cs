@@ -4,6 +4,7 @@ using UnityEngine;
 using Unity.Jobs;
 using Unity.Collections;
 using Unity.Mathematics;
+using Random = UnityEngine.Random;
 
 namespace _Scripts.Animals
 {
@@ -12,11 +13,10 @@ namespace _Scripts.Animals
         [SerializeField] private AnimalSo[] animalSoList;
         [SerializeField] private int boundsWidth = 20;
         [SerializeField] private int boundsHeight = 20;
-        [SerializeField] private uint seed = 123;
 
         private int _animalCount;
         private NativeArray<AnimalData> _animals;
-        private List<Transform> _animalTransforms;
+        private List<AnimalBehavior> _animalsBehavior;
         private JobHandle _animalJobHandle;
 
         private void Start()
@@ -30,22 +30,23 @@ namespace _Scripts.Animals
                 _animalCount += animalSo.initialCount;
 
             _animals = new NativeArray<AnimalData>(_animalCount, Allocator.Persistent);
-            _animalTransforms = new List<Transform>();
+            _animalsBehavior = new List<AnimalBehavior>();
             int index = 0;
-            
+
             foreach (AnimalSo animalSo in animalSoList)
             {
                 for (int i = 0; i < animalSo.initialCount; i++)
                 {
-                    GameObject animalGo = Instantiate(animalSo.prefab, GetRandomPosition(), Quaternion.identity);
-                    _animalTransforms.Add(animalGo.transform);
+                    AnimalBehavior animalGo = Instantiate(animalSo.prefab, GetRandomPosition(), Quaternion.identity)
+                        .GetComponent<AnimalBehavior>();
+                    _animalsBehavior.Add(animalGo);
                     float3 position = animalGo.transform.position;
                     quaternion rotation = animalGo.transform.rotation;
                     float3 targetDirection = GetRandomDirection();
                     float changeDirectionCooldown = UnityEngine.Random.Range(1f, 5f);
                     _animals[index++] = new AnimalData(animalSo.type, position, rotation, targetDirection,
-                        changeDirectionCooldown, animalSo.initialSpeed, animalSo.initialRotationSpeed, 
-                        animalSo.initialEatDistance, animalSo.hungerDecayRate, animalSo.hungerIncreaseWhenEaten, seed);
+                        changeDirectionCooldown, animalSo.initialSpeed, animalSo.initialRotationSpeed,
+                        animalSo.initialEatDistance, animalSo.hungerDecayRate, animalSo.hungerIncreaseWhenEaten);
                 }
             }
         }
@@ -71,18 +72,21 @@ namespace _Scripts.Animals
 
         private void UpdateAnimals()
         {
+            float randomFloat = Random.Range(0, 100f);
             AnimalMovementJob animalMovementJob = new()
             {
                 Animals = _animals,
                 DeltaTime = Time.deltaTime,
                 BoundsWidth = boundsWidth,
-                BoundsHeight = boundsHeight
+                BoundsHeight = boundsHeight,
+                RandomFloat = randomFloat
             };
 
             AnimalStatsJob animalStatsJob = new()
             {
                 Animals = _animals,
                 DeltaTime = Time.deltaTime,
+                RandomFloat = randomFloat
             };
 
             _animalJobHandle = animalMovementJob.Schedule(_animalCount, 32, _animalJobHandle);
@@ -95,8 +99,11 @@ namespace _Scripts.Animals
 
             for (int i = 0; i < _animalCount; i++)
             {
-                _animalTransforms[i].position = _animals[i].Position;
-                _animalTransforms[i].rotation = _animals[i].Rotation;
+                if (!_animals[i].IsActive)
+                    _animalsBehavior[i].Dead();
+                
+                _animalsBehavior[i].transform.position = _animals[i].Position;
+                _animalsBehavior[i].transform.rotation = _animals[i].Rotation;
             }
         }
 
@@ -107,7 +114,7 @@ namespace _Scripts.Animals
 
         public void DeleteAnimal(int index)
         {
-            Destroy(_animalTransforms[index].gameObject);
+            Destroy(_animalsBehavior[index].gameObject);
             //_animalTransforms.RemoveAt(index);
             _animalCount--;
         }

@@ -2,7 +2,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Random = Unity.Mathematics.Random;
 
 namespace _Scripts.Animals
 {
@@ -11,16 +10,17 @@ namespace _Scripts.Animals
     {
         public NativeArray<AnimalData> Animals;
         [ReadOnly] public float DeltaTime;
+        [ReadOnly] public float RandomFloat;
 
         public void Execute(int index)
         {
             AnimalData animalData = Animals[index];
             if (!animalData.IsActive) return;
-            
+
             HandleEatingOtherAnimals(ref animalData, index);
             HandleStats(ref animalData);
-            TryReproduce(ref animalData);
-            
+            TryReproduce(ref animalData, RandomFloat);
+
             Animals[index] = animalData;
         }
 
@@ -28,7 +28,7 @@ namespace _Scripts.Animals
         {
             NativeArray<AnimalData> updatedAnimals = new(Animals.Length, Allocator.Temp);
             Animals.CopyTo(updatedAnimals);
-            
+
             for (int i = 0; i < Animals.Length; i++)
             {
                 if (i == index) continue;
@@ -43,7 +43,7 @@ namespace _Scripts.Animals
                     updatedAnimals[i] = otherAnimalData;
                 }
             }
-            
+
             updatedAnimals.CopyTo(Animals);
             updatedAnimals.Dispose();
         }
@@ -55,14 +55,14 @@ namespace _Scripts.Animals
                 animalData.IsActive = false;
                 return;
             }
+
             animalData.TimeAlive += DeltaTime;
             animalData.Hunger -= math.max(0, animalData.HungerDecayRate * DeltaTime);
         }
 
-        private void TryReproduce(ref AnimalData animalData)
+        private void TryReproduce(ref AnimalData animalData, float randomFloat)
         {
-            Random random = new(animalData.Seed);
-            if (random.NextFloat(0f, 100f) <= 1f)
+            if (randomFloat <= 1f)
             {
                 // being spammed because same seed?
                 // NativeArray<AnimalData> updatedAnimals = new(Animals.Length + 1, Allocator.Temp);
