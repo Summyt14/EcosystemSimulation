@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using _Scripts.ScriptableObjects;
 using UnityEngine;
 using Unity.Jobs;
@@ -14,9 +15,8 @@ namespace _Scripts.Animals
         [SerializeField] private int boundsWidth = 20;
         [SerializeField] private int boundsHeight = 20;
 
-        private int _animalCount;
-        private NativeArray<AnimalData> _animals;
-        private List<AnimalBehavior> _animalsBehavior;
+        private List<AnimalData> _animalDataList;
+        private List<AnimalVisual> _animalVisualList;
         private JobHandle _animalJobHandle;
 
         private void Start()
@@ -26,42 +26,42 @@ namespace _Scripts.Animals
 
         private void SpawnAnimals()
         {
-            foreach (AnimalSo animalSo in animalSoList)
-                _animalCount += animalSo.initialCount;
+            _animalDataList = new List<AnimalData>();
+            _animalVisualList = new List<AnimalVisual>();
 
-            _animals = new NativeArray<AnimalData>(_animalCount, Allocator.Persistent);
-            _animalsBehavior = new List<AnimalBehavior>();
-            int index = 0;
-
+            // Spawn initial animals
             foreach (AnimalSo animalSo in animalSoList)
             {
                 for (int i = 0; i < animalSo.initialCount; i++)
                 {
-                    AnimalBehavior animalGo = Instantiate(animalSo.prefab, GetRandomPosition(), Quaternion.identity)
-                        .GetComponent<AnimalBehavior>();
-                    _animalsBehavior.Add(animalGo);
-                    float3 position = animalGo.transform.position;
-                    quaternion rotation = animalGo.transform.rotation;
+                    AnimalVisual animalVisual = Instantiate(animalSo.prefab, GetRandomPosition(), Quaternion.identity)
+                        .GetComponent<AnimalVisual>();
+                    float3 position = animalVisual.transform.position;
+                    quaternion rotation = animalVisual.transform.rotation;
                     float3 targetDirection = GetRandomDirection();
-                    float changeDirectionCooldown = UnityEngine.Random.Range(1f, 5f);
-                    _animals[index++] = new AnimalData(animalSo.type, position, rotation, targetDirection,
+                    float changeDirectionCooldown = Random.Range(1f, 5f);
+                    AnimalData animalData = new(animalSo.type, position, rotation, targetDirection,
                         changeDirectionCooldown, animalSo.initialSpeed, animalSo.initialRotationSpeed,
-                        animalSo.initialEatDistance, animalSo.hungerDecayRate, animalSo.hungerIncreaseWhenEaten);
+                        animalSo.initialEatDistance, animalSo.hungerDecayRate, animalSo.tryReproduceRate,
+                        animalSo.hungerIncreaseWhenEaten);
+                    animalVisual.AnimalData = animalData;
+                    _animalDataList.Add(animalData);
+                    _animalVisualList.Add(animalVisual);
                 }
             }
         }
 
         private Vector3 GetRandomPosition()
         {
-            float x = UnityEngine.Random.Range(-boundsWidth, boundsWidth);
-            float z = UnityEngine.Random.Range(-boundsHeight, boundsHeight);
+            float x = Random.Range(-boundsWidth, boundsWidth);
+            float z = Random.Range(-boundsHeight, boundsHeight);
             return new Vector3(x, 0f, z);
         }
 
         private float3 GetRandomDirection()
         {
-            float x = UnityEngine.Random.Range(-1f, 1f);
-            float z = UnityEngine.Random.Range(-1f, 1f);
+            float x = Random.Range(-1f, 1f);
+            float z = Random.Range(-1f, 1f);
             return math.normalize(new float3(x, 0f, z));
         }
 
@@ -72,51 +72,88 @@ namespace _Scripts.Animals
 
         private void UpdateAnimals()
         {
-            float randomFloat = Random.Range(0, 100f);
+            int seed = Random.Range(0, int.MaxValue);
+            // Initialize lists
+            AnimalData[] animalDataArray = _animalDataList.ToArray();
+            NativeArray<AnimalData> animalDataNative = new(animalDataArray, Allocator.TempJob);
+            NativeArray<AnimalData> newAnimalDataNative = new(animalDataArray.Length, Allocator.TempJob);
+
             AnimalMovementJob animalMovementJob = new()
             {
-                Animals = _animals,
+                AnimalDataNativeArray = animalDataNative,
                 DeltaTime = Time.deltaTime,
                 BoundsWidth = boundsWidth,
                 BoundsHeight = boundsHeight,
-                RandomFloat = randomFloat
+                Seed = seed
             };
 
             AnimalStatsJob animalStatsJob = new()
             {
-                Animals = _animals,
+                AnimalDataNativeArray = animalDataNative,
+                NewAnimalNativeArray = newAnimalDataNative,
                 DeltaTime = Time.deltaTime,
-                RandomFloat = randomFloat
+                Seed = seed
             };
 
-            _animalJobHandle = animalMovementJob.Schedule(_animalCount, 32, _animalJobHandle);
-            _animalJobHandle = animalStatsJob.Schedule(_animalCount, 32, _animalJobHandle);
-        }
-
-        private void LateUpdate()
-        {
+            // Run jobs
+            _animalJobHandle = animalMovementJob.Schedule(animalDataArray.Length, 32, _animalJobHandle);
+            _animalJobHandle = animalStatsJob.Schedule(animalDataArray.Length, 32, _animalJobHandle);
             _animalJobHandle.Complete();
+            
+            // Update list
+            animalDataNative.CopyTo(animalDataArray);
+            animalDataNative.Dispose();
+            _animalDataList.Clear();
+            _animalDataList.AddRange(animalDataArray);
 
-            for (int i = 0; i < _animalCount; i++)
+            // Create new animals
+            for (int i = 0; i < newAnimalDataNative.Length; i++)
             {
-                if (!_animals[i].IsActive)
-                    _animalsBehavior[i].Dead();
-                
-                _animalsBehavior[i].transform.position = _animals[i].Position;
-                _animalsBehavior[i].transform.rotation = _animals[i].Rotation;
+                if (!newAnimalDataNative[i].IsActive) continue;
+                _animalDataList.Add(newAnimalDataNative[i]);
+                AnimalVisual newAnimalVisual = CreateAnimal(newAnimalDataNative[i].Type, newAnimalDataNative[i].Position, newAnimalDataNative[i].Rotation)
+                    .GetComponent<AnimalVisual>();
+                newAnimalVisual.AnimalData = newAnimalDataNative[i];
+                _animalVisualList.Add(newAnimalVisual);
+                Debug.Log("New animal");
+            }
+
+            newAnimalDataNative.Dispose();
+            
+            List<int> indicesToRemove = new();
+            for (int i = 0; i < _animalDataList.Count; i++)
+            {
+                // Check if animal is dead
+                if (!_animalDataList[i].IsActive)
+                {
+                    // If so, remove it from the list
+                    _animalVisualList[i].Dead();
+                    indicesToRemove.Add(i);
+                }
+                else
+                {
+                    // If not, update its position
+                    _animalVisualList[i].transform.position = _animalDataList[i].Position;
+                    _animalVisualList[i].transform.rotation = _animalDataList[i].Rotation;
+                }
+            }
+
+            // Remove dead animals
+            foreach (int index in indicesToRemove)
+            {
+                RemoveAnimal(index);
             }
         }
 
-        private void OnDestroy()
+        private GameObject CreateAnimal(AnimalData.AnimalType animalType, Vector3 position, Quaternion rotation)
         {
-            _animals.Dispose();
+            return Instantiate(animalSoList[(int)animalType].prefab, position, rotation);
         }
 
-        public void DeleteAnimal(int index)
+        private void RemoveAnimal(int index)
         {
-            Destroy(_animalsBehavior[index].gameObject);
-            //_animalTransforms.RemoveAt(index);
-            _animalCount--;
+            _animalDataList.RemoveAt(index);
+            _animalVisualList.RemoveAt(index);
         }
     }
 }

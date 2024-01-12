@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Chicken
   m_EditorClassIdentifier: 
   prefab: {fileID: 3247687269069320958, guid: 52f0a4917d968274bbc77dfbd5488514, type: 3}
-  initialCount: 25
+  initialCount: 5
   initialSpeed: 5
   initialRotationSpeed: 2
   initialEatDistance: 1
-  hungerDecayRate: 3
-  hungerIncreaseWhenEaten: 50
-  type: 2
+  hungerDecayRate: 10
+  tryReproduceRate: 10
+  hungerIncreaseWhenEaten: 100
+  type: 1

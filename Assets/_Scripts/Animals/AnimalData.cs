@@ -1,6 +1,8 @@
 using System;
+using _Scripts.ScriptableObjects;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace _Scripts.Animals
 {
@@ -8,8 +10,8 @@ namespace _Scripts.Animals
     {
         public enum AnimalType
         {
-            Fox = 1,
-            Chicken = 2
+            Fox = 0,
+            Chicken = 1
         }
 
         public AnimalType Type;
@@ -21,15 +23,17 @@ namespace _Scripts.Animals
         public quaternion Rotation;
         public float3 TargetDirection;
         public float ChangeDirectionCooldown;
+        public float ReproduceCooldown;
         [ReadOnly] public float Speed;
         [ReadOnly] public float RotationSpeed;
         [ReadOnly] public float EatDistance;
         [ReadOnly] public float HungerDecayRate;
+        [ReadOnly] public float TryReproduceRate;
         [ReadOnly] public int HungerIncreaseWhenEaten;
 
         public AnimalData(AnimalType animalType, float3 position, quaternion rotation, float3 targetDirection,
-            float changeDirectionCooldown, float speed, float rotationSpeed, float eatDistance, float hungerDecayRate,
-            int hungerIncreaseWhenEaten)
+            float changeDirectionCooldown, float speed, float rotationSpeed, float eatDistance, float hungerDecayRate, 
+            float tryReproduceRate, int hungerIncreaseWhenEaten)
         {
             Type = animalType;
             Size = 1f;
@@ -40,17 +44,19 @@ namespace _Scripts.Animals
             Rotation = rotation;
             TargetDirection = targetDirection;
             ChangeDirectionCooldown = changeDirectionCooldown;
+            ReproduceCooldown = 0;
             Speed = speed;
             RotationSpeed = rotationSpeed;
             EatDistance = eatDistance;
             HungerDecayRate = hungerDecayRate;
+            TryReproduceRate = tryReproduceRate;
             HungerIncreaseWhenEaten = hungerIncreaseWhenEaten;
         }
 
         public AnimalData Copy()
         {
             return new AnimalData(Type, Position, Rotation, TargetDirection, ChangeDirectionCooldown,
-                Speed, RotationSpeed, EatDistance, HungerDecayRate, HungerIncreaseWhenEaten);
+                Speed, RotationSpeed, EatDistance, HungerDecayRate, TryReproduceRate, HungerIncreaseWhenEaten);
         }
     }
 

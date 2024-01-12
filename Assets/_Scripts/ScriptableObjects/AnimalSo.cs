@@ -12,6 +12,7 @@ namespace _Scripts.ScriptableObjects
         public float initialRotationSpeed = 2f;
         public float initialEatDistance = 1f;
         public float hungerDecayRate = 0.1f;
+        public float tryReproduceRate = 1f;
         public int hungerIncreaseWhenEaten = 50;
         public AnimalData.AnimalType type;
     }

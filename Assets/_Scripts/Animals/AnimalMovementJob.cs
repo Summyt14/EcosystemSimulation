@@ -8,23 +8,25 @@ namespace _Scripts.Animals
     [BurstCompile]
     public struct AnimalMovementJob : IJobParallelFor
     {
-        public NativeArray<AnimalData> Animals;
+        public NativeArray<AnimalData> AnimalDataNativeArray;
         [ReadOnly] public float DeltaTime;
         [ReadOnly] public int BoundsWidth;
         [ReadOnly] public int BoundsHeight;
-        [ReadOnly] public float RandomFloat;
+        [ReadOnly] public int Seed;
 
         public void Execute(int index)
         {
-            AnimalData animalData = Animals[index];
+            AnimalData animalData = AnimalDataNativeArray[index];
             if (!animalData.IsActive) return;
+            Random randomGen = new((uint)((index + 1) * Seed) + 1);
+            float rand = randomGen.NextFloat(0, 100);
 
-            HandleRandomDirectionChange(ref animalData, RandomFloat);
+            HandleRandomDirectionChange(ref animalData, rand);
             HandleOffBounds(ref animalData);
             RotateTowardsTarget(ref animalData);
             SetPosition(ref animalData);
-
-            Animals[index] = animalData;
+            
+            AnimalDataNativeArray[index] = animalData;
         }
 
         private void HandleRandomDirectionChange(ref AnimalData animalData, float randomFloat)
