@@ -17,7 +17,7 @@ MonoBehaviour:
   initialSpeed: 5
   initialRotationSpeed: 2
   initialEatDistance: 1
-  hungerDecayRate: 10
+  hungerDecayRate: 5
   tryReproduceRate: 10
   hungerIncreaseWhenEaten: 100
   type: 1

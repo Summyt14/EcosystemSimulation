@@ -1,6 +1,5 @@
 using System;
 using _Scripts.ScriptableObjects;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -14,28 +13,28 @@ namespace _Scripts.Animals
             Chicken = 1
         }
 
+        public AnimalSo AnimalSo;
         public AnimalType Type;
         public float Size;
         public float Hunger;
         public float TimeAlive;
         public bool IsActive;
-        public float3 Position;
-        public quaternion Rotation;
-        public float3 TargetDirection;
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public Vector3 TargetDirection;
         public float ChangeDirectionCooldown;
         public float ReproduceCooldown;
-        [ReadOnly] public float Speed;
-        [ReadOnly] public float RotationSpeed;
-        [ReadOnly] public float EatDistance;
-        [ReadOnly] public float HungerDecayRate;
-        [ReadOnly] public float TryReproduceRate;
-        [ReadOnly] public int HungerIncreaseWhenEaten;
+        public readonly float Speed;
+        public readonly float RotationSpeed;
+        public readonly float HungerDecayRate;
+        public readonly float TryReproduceRate;
+        public readonly int HungerIncreaseWhenEaten;
 
-        public AnimalData(AnimalType animalType, float3 position, quaternion rotation, float3 targetDirection,
-            float changeDirectionCooldown, float speed, float rotationSpeed, float eatDistance, float hungerDecayRate, 
-            float tryReproduceRate, int hungerIncreaseWhenEaten)
+        public AnimalData(AnimalSo animalSo, Vector3 position, Quaternion rotation, Vector3 targetDirection,
+            float changeDirectionCooldown)
         {
-            Type = animalType;
+            AnimalSo = animalSo;
+            Type = animalSo.type;
             Size = 1f;
             Hunger = 100f;
             TimeAlive = 0;
@@ -45,19 +44,14 @@ namespace _Scripts.Animals
             TargetDirection = targetDirection;
             ChangeDirectionCooldown = changeDirectionCooldown;
             ReproduceCooldown = 0;
-            Speed = speed;
-            RotationSpeed = rotationSpeed;
-            EatDistance = eatDistance;
-            HungerDecayRate = hungerDecayRate;
-            TryReproduceRate = tryReproduceRate;
-            HungerIncreaseWhenEaten = hungerIncreaseWhenEaten;
+            Speed = animalSo.initialSpeed;
+            RotationSpeed = animalSo.initialRotationSpeed;
+            HungerDecayRate = animalSo.hungerDecayRate;
+            TryReproduceRate = animalSo.tryReproduceRate;
+            HungerIncreaseWhenEaten = animalSo.hungerIncreaseWhenEaten;
         }
 
-        public AnimalData Copy()
-        {
-            return new AnimalData(Type, Position, Rotation, TargetDirection, ChangeDirectionCooldown,
-                Speed, RotationSpeed, EatDistance, HungerDecayRate, TryReproduceRate, HungerIncreaseWhenEaten);
-        }
+        public AnimalData Copy() => new(AnimalSo, Position, Rotation, TargetDirection, ChangeDirectionCooldown);
     }
 
     public static class AnimalTypeExtensions
