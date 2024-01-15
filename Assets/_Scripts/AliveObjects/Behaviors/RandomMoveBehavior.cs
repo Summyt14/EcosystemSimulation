@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace _Scripts.Animals.Behaviors
+namespace _Scripts.AliveObjects.Behaviors
 {
     public class RandomMoveBehavior
     {

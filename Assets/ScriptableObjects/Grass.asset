@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68057e7dbc0048e989a4ccaec6cf6acb, type: 3}
+  m_Name: Grass
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 3247687269069320958, guid: 6634c1159011fbd49b3c345541af817f, type: 3}
+  type: 3
+  initialCount: 20
+  hungerIncreaseWhenEaten: 50
+  tryReproduceRate: 1

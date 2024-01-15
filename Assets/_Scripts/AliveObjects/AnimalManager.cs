@@ -1,19 +1,22 @@
+using System;
 using System.Collections.Generic;
 using _Scripts.ScriptableObjects;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace _Scripts.Animals
+namespace _Scripts.AliveObjects
 {
-    public class AnimalManager2 : MonoBehaviour
+    public class AnimalManager : MonoBehaviour
     {
-        public static AnimalManager2 Instance { get; private set; }
+        public static AnimalManager Instance { get; private set; }
         public List<AnimalBehavior> AnimalList { get; set; }
 
         [SerializeField] private AnimalSo[] animalSoList;
+        [SerializeField] private AliveObjectSo[] aliveObjectSoList;
         [SerializeField] public int boundsWidth = 20;
         [SerializeField] public int boundsHeight = 20;
 
+        private float _spawnGrassTimer;
 
         private void Awake()
         {
@@ -46,6 +49,18 @@ namespace _Scripts.Animals
                     AnimalList.Add(animalBehavior);
                 }
             }
+
+            // Spawn initial alive objects
+            foreach (AliveObjectSo aliveObjectSo in aliveObjectSoList)
+            {
+                for (int i = 0; i < aliveObjectSo.initialCount; i++)
+                    Instantiate(aliveObjectSo.prefab, GetRandomPosition(), Quaternion.identity);
+            }
+        }
+
+        private void Update()
+        {
+            SpawnRandomGrass();
         }
 
         private Vector3 GetRandomPosition()
@@ -62,9 +77,9 @@ namespace _Scripts.Animals
             return new Vector3(x, 0f, z).normalized;
         }
 
-        private AnimalBehavior CreateAnimal(AnimalData.AnimalType animalType, Vector3 position, Quaternion rotation)
+        private AnimalBehavior CreateAnimal(AliveObjectSo.Type type, Vector3 position, Quaternion rotation)
         {
-            return Instantiate(animalSoList[(int)animalType].prefab, position, rotation).GetComponent<AnimalBehavior>();
+            return Instantiate(animalSoList[(int)type].prefab, position, rotation).GetComponent<AnimalBehavior>();
         }
 
         public void AddAnimal(AnimalData newAnimalData)
@@ -72,6 +87,20 @@ namespace _Scripts.Animals
             AnimalBehavior newAnimal = CreateAnimal(newAnimalData.Type, newAnimalData.Position, newAnimalData.Rotation);
             newAnimal.AnimalData = newAnimalData;
             AnimalList.Add(newAnimal);
+        }
+
+        private void SpawnRandomGrass()
+        {
+            foreach (AliveObjectSo aliveObjectSo in aliveObjectSoList)
+            {
+                if (_spawnGrassTimer >= aliveObjectSo.tryReproduceRate)
+                {
+                    Instantiate(aliveObjectSo.prefab, GetRandomPosition(), Quaternion.identity);
+                    _spawnGrassTimer = 0f;
+                }
+                else
+                    _spawnGrassTimer += Time.deltaTime;
+            }
         }
     }
 }

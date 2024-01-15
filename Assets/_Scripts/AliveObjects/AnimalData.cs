@@ -1,20 +1,12 @@
-using System;
 using _Scripts.ScriptableObjects;
-using Unity.Mathematics;
 using UnityEngine;
 
-namespace _Scripts.Animals
+namespace _Scripts.AliveObjects
 {
     public struct AnimalData
     {
-        public enum AnimalType
-        {
-            Fox = 0,
-            Chicken = 1
-        }
-
-        public AnimalSo AnimalSo;
-        public AnimalType Type;
+        public readonly AnimalSo AnimalSo;
+        public AliveObjectSo.Type Type;
         public float Size;
         public float Hunger;
         public float TimeAlive;
@@ -52,25 +44,5 @@ namespace _Scripts.Animals
         }
 
         public AnimalData Copy() => new(AnimalSo, Position, Rotation, TargetDirection, ChangeDirectionCooldown);
-    }
-
-    public static class AnimalTypeExtensions
-    {
-        public static bool CanEat(this AnimalData.AnimalType animal1, AnimalData.AnimalType animal2)
-        {
-            switch (animal1)
-            {
-                case AnimalData.AnimalType.Fox:
-                    if (animal2 == AnimalData.AnimalType.Chicken) return true;
-                    break;
-                case AnimalData.AnimalType.Chicken:
-                    if (animal2 == AnimalData.AnimalType.Fox) return false;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(animal1), animal1, "Unknown animal type");
-            }
-
-            return false;
-        }
     }
 }

@@ -1,7 +1,8 @@
-using _Scripts.Animals.Behaviors;
+using _Scripts.AliveObjects.Behaviors;
+using _Scripts.ScriptableObjects;
 using UnityEngine;
 
-namespace _Scripts.Animals
+namespace _Scripts.AliveObjects
 {
     public class AnimalBehavior : MonoBehaviour
     {
@@ -18,7 +19,7 @@ namespace _Scripts.Animals
         {
             _deadCountdown = timeUntilDestroy;
             _randomMoveBehavior =
-                new RandomMoveBehavior(AnimalManager2.Instance.boundsWidth, AnimalManager2.Instance.boundsHeight);
+                new RandomMoveBehavior(AnimalManager.Instance.boundsWidth, AnimalManager.Instance.boundsHeight);
         }
 
         private void Update()
@@ -37,16 +38,23 @@ namespace _Scripts.Animals
             _randomMoveBehavior.Update(ref AnimalData, Time.deltaTime);
             HandleStats();
             TryReproduce();
-            
+
             transform.position = AnimalData.Position;
             transform.rotation = AnimalData.Rotation;
         }
 
         private void OnTriggerEnter(Collider other)
         {
+            // Check if collided with grass and if can eat it
+            if (other.TryGetComponent(out Grass grass) && AnimalData.AnimalSo.type.CanEat(AliveObjectSo.Type.Grass))
+            {
+                AnimalData.Hunger += Mathf.InverseLerp(0, 100, grass.aliveObjectSo.hungerIncreaseWhenEaten) * 100;
+                Destroy(grass.gameObject);
+            }
+
             // Check if collided with another animal and if can eat it 
             if (other.TryGetComponent(out AnimalBehavior otherAnimal) && otherAnimal.AnimalData.IsActive &&
-                AnimalData.Type.CanEat(otherAnimal.AnimalData.Type))
+                AnimalData.AnimalSo.type.CanEat(otherAnimal.AnimalData.Type))
             {
                 otherAnimal.Dead();
                 AnimalData.Hunger += Mathf.InverseLerp(0, 100, otherAnimal.AnimalData.HungerIncreaseWhenEaten) * 100;
@@ -69,12 +77,12 @@ namespace _Scripts.Animals
                 Dead();
                 return;
             }
-            
+
             // Update stats based on time since last update and decrease hunger
             AnimalData.TimeAlive += Time.deltaTime;
             AnimalData.Hunger -= AnimalData.HungerDecayRate * Time.deltaTime;
         }
-        
+
         private void TryReproduce()
         {
             // Check if animal can reproduce
@@ -87,7 +95,7 @@ namespace _Scripts.Animals
             {
                 AnimalData newAnimalData = AnimalData.Copy();
                 //TODO mutate
-                AnimalManager2.Instance.AddAnimal(newAnimalData);
+                AnimalManager.Instance.AddAnimal(newAnimalData);
             }
         }
     }
