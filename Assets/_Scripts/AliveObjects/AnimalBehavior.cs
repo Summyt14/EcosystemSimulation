@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace _Scripts.AliveObjects
 {
+    [SelectionBase]
     public class AnimalBehavior : MonoBehaviour
     {
         public AnimalData AnimalData;
