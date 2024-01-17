@@ -10,8 +10,10 @@ namespace _Scripts.AliveObjects
     {
         public static AnimalManager Instance { get; private set; }
         public List<AnimalBehavior> AnimalList { get; set; }
-
-        [SerializeField] private AnimalSo[] animalSoList;
+        public Dictionary<AliveObjectSo.Type, int> AliveObjectCount { get; set; }
+        public Action OnAliveObjectCountChanged { get; set; }
+        
+        [SerializeField] public AnimalSo[] animalSoList;
         [SerializeField] private AliveObjectSo[] aliveObjectSoList;
         [SerializeField] public int boundsWidth = 20;
         [SerializeField] public int boundsHeight = 20;
@@ -29,6 +31,7 @@ namespace _Scripts.AliveObjects
 
             Instance = this;
             AnimalList = new List<AnimalBehavior>();
+            AliveObjectCount = new Dictionary<AliveObjectSo.Type, int>();
         }
 
         private void Start()
@@ -38,15 +41,12 @@ namespace _Scripts.AliveObjects
             {
                 for (int i = 0; i < animalSo.initialCount; i++)
                 {
-                    AnimalBehavior animalBehavior = Instantiate(animalSo.prefab, GetRandomPosition(), Quaternion.identity)
-                        .GetComponent<AnimalBehavior>();
-                    Vector3 position = animalBehavior.transform.position;
-                    Quaternion rotation = animalBehavior.transform.rotation;
+                    Vector3 position = GetRandomPosition();
+                    Quaternion rotation = Quaternion.identity;
                     Vector3 targetDirection = GetRandomDirection();
                     float changeDirectionCooldown = Random.Range(1f, 5f);
-                    AnimalData animalData = new(animalSo, position, rotation, targetDirection, changeDirectionCooldown);
-                    animalBehavior.AnimalData = animalData;
-                    AnimalList.Add(animalBehavior);
+                    AnimalData animalData = new(animalSo, position, rotation, targetDirection, changeDirectionCooldown, 1);
+                    AddNewAnimal(animalData);
                 }
             }
 
@@ -54,7 +54,10 @@ namespace _Scripts.AliveObjects
             foreach (AliveObjectSo aliveObjectSo in aliveObjectSoList)
             {
                 for (int i = 0; i < aliveObjectSo.initialCount; i++)
+                {
                     Instantiate(aliveObjectSo.prefab, GetRandomPosition(), Quaternion.identity);
+                    UpdateAliveObjectCount(aliveObjectSo.type, 1);
+                }
             }
         }
 
@@ -77,16 +80,14 @@ namespace _Scripts.AliveObjects
             return new Vector3(x, 0f, z).normalized;
         }
 
-        private AnimalBehavior CreateAnimal(AliveObjectSo.Type type, Vector3 position, Quaternion rotation)
+        public void AddNewAnimal(AnimalData newAnimalData)
         {
-            return Instantiate(animalSoList[(int)type].prefab, position, rotation).GetComponent<AnimalBehavior>();
-        }
-
-        public void AddAnimal(AnimalData newAnimalData)
-        {
-            AnimalBehavior newAnimal = CreateAnimal(newAnimalData.Type, newAnimalData.Position, newAnimalData.Rotation);
+            AnimalBehavior newAnimal = Instantiate(animalSoList[(int)newAnimalData.Type].prefab, newAnimalData.Position,
+                newAnimalData.Rotation).GetComponent<AnimalBehavior>();
+            newAnimal.transform.localScale = new Vector3(newAnimalData.Size, newAnimalData.Size, newAnimalData.Size);
             newAnimal.AnimalData = newAnimalData;
             AnimalList.Add(newAnimal);
+            UpdateAliveObjectCount(newAnimalData.Type, 1);
         }
 
         private void SpawnRandomGrass()
@@ -97,10 +98,21 @@ namespace _Scripts.AliveObjects
                 {
                     Instantiate(aliveObjectSo.prefab, GetRandomPosition(), Quaternion.identity);
                     _spawnGrassTimer = 0f;
+                    UpdateAliveObjectCount(AliveObjectSo.Type.Grass, 1);
                 }
                 else
                     _spawnGrassTimer += Time.deltaTime;
             }
+        }
+
+        public void UpdateAliveObjectCount(AliveObjectSo.Type type, int amount)
+        {   
+            if (!AliveObjectCount.ContainsKey(type))
+                AliveObjectCount.Add(type, amount);
+            else
+                AliveObjectCount[type] += amount;
+            
+            OnAliveObjectCountChanged.Invoke();
         }
     }
 }

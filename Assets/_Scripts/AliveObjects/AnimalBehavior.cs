@@ -1,6 +1,9 @@
+using System.Linq;
 using _Scripts.AliveObjects.Behaviors;
 using _Scripts.ScriptableObjects;
 using UnityEngine;
+using Random = UnityEngine.Random;
+using static _Scripts.Utils.HelperMethods;
 
 namespace _Scripts.AliveObjects
 {
@@ -21,6 +24,11 @@ namespace _Scripts.AliveObjects
             _deadCountdown = timeUntilDestroy;
             _randomMoveBehavior =
                 new RandomMoveBehavior(AnimalManager.Instance.boundsWidth, AnimalManager.Instance.boundsHeight);
+        }
+
+        private void Start()
+        {
+            animator.speed = Map(AnimalData.Genes[0], 0f, 1f, 2f, 0.5f);
         }
 
         private void Update()
@@ -47,7 +55,7 @@ namespace _Scripts.AliveObjects
         private void OnTriggerEnter(Collider other)
         {
             // Check if collided with grass and if can eat it
-            if (other.TryGetComponent(out Grass grass) && AnimalData.AnimalSo.type.CanEat(AliveObjectSo.Type.Grass))
+            if (other.TryGetComponent(out Grass grass) && AnimalData.AnimalSo.canEatList.Contains(AliveObjectSo.Type.Grass))
             {
                 AnimalData.Hunger += Mathf.InverseLerp(0, 100, grass.aliveObjectSo.hungerIncreaseWhenEaten) * 100;
                 Destroy(grass.gameObject);
@@ -55,10 +63,11 @@ namespace _Scripts.AliveObjects
 
             // Check if collided with another animal and if can eat it 
             if (other.TryGetComponent(out AnimalBehavior otherAnimal) && otherAnimal.AnimalData.IsActive &&
-                AnimalData.AnimalSo.type.CanEat(otherAnimal.AnimalData.Type))
+                AnimalData.AnimalSo.canEatList.Contains(otherAnimal.AnimalData.Type))
             {
                 otherAnimal.Dead();
-                AnimalData.Hunger += Mathf.InverseLerp(0, 100, otherAnimal.AnimalData.HungerIncreaseWhenEaten) * 100;
+                AnimalData.Hunger += otherAnimal.AnimalData.HungerIncreaseWhenEaten;
+                AnimalData.Hunger = Mathf.Clamp(AnimalData.Hunger, 0f, 100f);
             }
         }
 
@@ -66,6 +75,8 @@ namespace _Scripts.AliveObjects
         {
             // Play dead animation
             animator.Play("Dead");
+            AnimalManager.Instance.UpdateAliveObjectCount(AnimalData.Type, -1);
+            AnimalManager.Instance.AnimalList.Remove(this);
             _isDead = true;
             AnimalData.IsActive = false;
         }
@@ -86,17 +97,17 @@ namespace _Scripts.AliveObjects
 
         private void TryReproduce()
         {
+            if (_isDead) return;
             // Check if animal can reproduce
             AnimalData.ReproduceCooldown += Time.deltaTime;
             if (AnimalData.ReproduceCooldown < AnimalData.TryReproduceRate) return;
             AnimalData.ReproduceCooldown = 0;
-            float chance = Random.Range(0, 100f);
-            // Reproduce with 10% chance
-            if (chance >= 90f)
+            float chance = Random.Range(0, 100f) + AnimalData.TimeAlive;
+            // Reproduce with 1% chance
+            if (chance < 1f)
             {
                 AnimalData newAnimalData = AnimalData.Copy();
-                //TODO mutate
-                AnimalManager.Instance.AddAnimal(newAnimalData);
+                AnimalManager.Instance.AddNewAnimal(newAnimalData);
             }
         }
     }
