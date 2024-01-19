@@ -18,7 +18,7 @@ namespace _Scripts.ScriptableObjects
         public Type type;
         public Type[] canEatList;
         public int initialCount = 10;
-        public int hungerIncreaseWhenEaten = 50;
+        public int hungerDecreaseWhenEaten = 50;
         public float tryReproduceRate = 1f;
     }
 }

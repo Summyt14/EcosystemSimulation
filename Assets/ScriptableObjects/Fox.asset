@@ -16,6 +16,8 @@ MonoBehaviour:
   type: 0
   canEatList: 01000000
   initialCount: 5
-  hungerIncreaseWhenEaten: 50
-  tryReproduceRate: 10
+  hungerDecreaseWhenEaten: 50
+  tryReproduceRate: 1
+  reproduceChance: 2
+  mutationChance: 1
   initialRotationSpeed: 2

@@ -58,8 +58,8 @@ namespace _Scripts.AliveObjects
             // Check if collided with grass and if can eat it
             if (other.TryGetComponent(out Grass grass) && animalData.AnimalSo.canEatList.Contains(AliveObjectSo.Type.Grass))
             {
-                animalData.Hunger += grass.aliveObjectSo.hungerIncreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
-                animalData.Hunger = Mathf.Clamp(grass.aliveObjectSo.hungerIncreaseWhenEaten, 0f, 100f);
+                animalData.Hunger -= grass.aliveObjectSo.hungerDecreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
+                animalData.Hunger = Mathf.Clamp(grass.aliveObjectSo.hungerDecreaseWhenEaten, 0f, 100f);
                 Destroy(grass.gameObject);
                 AnimalManager.Instance.UpdateAliveObjectCount(AliveObjectSo.Type.Grass, -1);
             }
@@ -69,7 +69,7 @@ namespace _Scripts.AliveObjects
                 animalData.AnimalSo.canEatList.Contains(otherAnimal.animalData.Type))
             {
                 otherAnimal.Dead();
-                animalData.Hunger += otherAnimal.animalData.HungerIncreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
+                animalData.Hunger -= otherAnimal.animalData.HungerDecreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
                 animalData.Hunger = Mathf.Clamp(animalData.Hunger, 0f, 100f);
             }
         }
@@ -87,7 +87,7 @@ namespace _Scripts.AliveObjects
         private void HandleStats()
         {
             // Check if animal is fully hungry and if so deactivate it
-            if (animalData.Hunger <= 0)
+            if (animalData.Hunger >= 100)
             {
                 Dead();
                 return;
@@ -95,7 +95,7 @@ namespace _Scripts.AliveObjects
 
             // Update stats based on time since last update and decrease hunger
             animalData.TimeAlive += Time.deltaTime;
-            animalData.Hunger -= animalData.HungerDecayRate * Time.deltaTime;
+            animalData.Hunger += animalData.HungerIncreaseRate * Time.deltaTime;
         }
 
         private void TryReproduce()
@@ -103,13 +103,12 @@ namespace _Scripts.AliveObjects
             if (_isDead) return;
             // Check if animal can reproduce
             animalData.ReproduceCooldown += Time.deltaTime;
-            if (animalData.ReproduceCooldown < animalData.TryReproduceRate) return;
+            if (animalData.ReproduceCooldown < animalData.ReproduceRate) return;
             animalData.ReproduceCooldown = 0;
-            float chance = Mathf.Clamp(Random.Range(0, 100f) + animalData.TimeAlive, 0f, 100f);
-            // Reproduce with 1% chance
-            if (chance >= 99f)
+            // Reproduce chance
+            if (Random.Range(0, 100f) <= animalData.AnimalSo.reproduceChance)
             {
-                AnimalData newAnimalData = animalData.Copy();
+                AnimalData newAnimalData = animalData.Reproduce();
                 AnimalManager.Instance.AddNewAnimal(ref newAnimalData);
             }
         }

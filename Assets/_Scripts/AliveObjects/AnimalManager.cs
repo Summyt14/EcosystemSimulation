@@ -62,7 +62,7 @@ namespace _Scripts.AliveObjects
                     Quaternion rotation = Quaternion.identity;
                     Vector3 targetDirection = GetRandomDirection();
                     float changeDirectionCooldown = Random.Range(1f, 5f);
-                    AnimalData animalData = new(animalSo, position, rotation, targetDirection, changeDirectionCooldown, 1);
+                    AnimalData animalData = new(animalSo, position, rotation, targetDirection, changeDirectionCooldown);
                     AddNewAnimal(ref animalData);
                 }
             }
