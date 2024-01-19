@@ -1,24 +1,34 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using _Scripts.ScriptableObjects;
+using _Scripts.Utils;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using static _Scripts.Utils.HelperMethods;
 
 namespace _Scripts.AliveObjects
 {
     public class AnimalManager : MonoBehaviour
     {
         public static AnimalManager Instance { get; private set; }
-        public List<AnimalBehavior> AnimalList { get; set; }
-        public Dictionary<AliveObjectSo.Type, int> AliveObjectCount { get; set; }
+        public List<AnimalBehavior> AnimalBehaviorList { get; private set; }
+        public Dictionary<AliveObjectSo.Type, int> AliveObjectCount { get; private set; }
         public Action OnAliveObjectCountChanged { get; set; }
-        
+
         [SerializeField] public AnimalSo[] animalSoList;
         [SerializeField] private AliveObjectSo[] aliveObjectSoList;
         [SerializeField] public int boundsWidth = 20;
         [SerializeField] public int boundsHeight = 20;
+        [SerializeField] public float hungerDecayRate = 1f;
+        [SerializeField] private float exportInterval = 1f;
+        [SerializeField] private string fileName = "animal_data";
 
+        private float _timeSinceStart;
         private float _spawnGrassTimer;
+        private float _exportTimer;
+        private string _filePath;
 
         private void Awake()
         {
@@ -30,12 +40,19 @@ namespace _Scripts.AliveObjects
             }
 
             Instance = this;
-            AnimalList = new List<AnimalBehavior>();
+            AnimalBehaviorList = new List<AnimalBehavior>();
             AliveObjectCount = new Dictionary<AliveObjectSo.Type, int>();
+            _filePath = $"{Application.dataPath}/JsonFiles/{fileName}.json";
         }
 
         private void Start()
         {
+            if (File.Exists(_filePath))
+            {
+                File.Delete(_filePath);
+                File.Delete($"{Application.dataPath}/JsonFiles/{fileName}.meta");
+            }
+            
             // Spawn initial animals
             foreach (AnimalSo animalSo in animalSoList)
             {
@@ -46,7 +63,7 @@ namespace _Scripts.AliveObjects
                     Vector3 targetDirection = GetRandomDirection();
                     float changeDirectionCooldown = Random.Range(1f, 5f);
                     AnimalData animalData = new(animalSo, position, rotation, targetDirection, changeDirectionCooldown, 1);
-                    AddNewAnimal(animalData);
+                    AddNewAnimal(ref animalData);
                 }
             }
 
@@ -63,7 +80,31 @@ namespace _Scripts.AliveObjects
 
         private void Update()
         {
+            CheckForKeyPresses();
+            
+            _timeSinceStart += Time.deltaTime;
             SpawnRandomGrass();
+
+            _exportTimer += Time.deltaTime;
+            if (_exportTimer >= exportInterval)
+            {
+                _exportTimer = 0f;
+                ExportData();
+            }
+        }
+
+        private void CheckForKeyPresses()
+        {
+            if (Input.GetKey(KeyCode.Space))
+                SetTimeScale(0f);
+            if (Input.GetKey(KeyCode.Alpha1))
+                SetTimeScale(1f);
+            if (Input.GetKey(KeyCode.Alpha2))
+                SetTimeScale(2f);
+            if (Input.GetKey(KeyCode.Alpha3))
+                SetTimeScale(4f);
+            if (Input.GetKey(KeyCode.Alpha4))
+                SetTimeScale(8f);
         }
 
         private Vector3 GetRandomPosition()
@@ -80,14 +121,14 @@ namespace _Scripts.AliveObjects
             return new Vector3(x, 0f, z).normalized;
         }
 
-        public void AddNewAnimal(AnimalData newAnimalData)
+        public void AddNewAnimal(ref AnimalData newAnimalData)
         {
             AnimalBehavior newAnimal = Instantiate(animalSoList[(int)newAnimalData.Type].prefab, newAnimalData.Position,
                 newAnimalData.Rotation).GetComponent<AnimalBehavior>();
             newAnimal.transform.localScale = new Vector3(newAnimalData.Size, newAnimalData.Size, newAnimalData.Size);
-            newAnimal.AnimalData = newAnimalData;
-            AnimalList.Add(newAnimal);
-            UpdateAliveObjectCount(newAnimalData.Type, 1);
+            newAnimal.animalData = newAnimalData;
+            AnimalBehaviorList.Add(newAnimal);
+            UpdateAliveObjectCount(newAnimal.animalData.Type, 1);
         }
 
         private void SpawnRandomGrass()
@@ -106,13 +147,32 @@ namespace _Scripts.AliveObjects
         }
 
         public void UpdateAliveObjectCount(AliveObjectSo.Type type, int amount)
-        {   
+        {
             if (!AliveObjectCount.ContainsKey(type))
                 AliveObjectCount.Add(type, amount);
             else
                 AliveObjectCount[type] += amount;
-            
-            OnAliveObjectCountChanged.Invoke();
+
+            OnAliveObjectCountChanged?.Invoke();
         }
+
+        private void ExportData()
+        {
+            // Load existing data if the file exists
+            WrapperHolder wrapperHolder;
+            
+            if (File.Exists(_filePath))
+                wrapperHolder = ReadFromJson<WrapperHolder>(_filePath) ?? new WrapperHolder();
+            else
+                wrapperHolder = new WrapperHolder();
+            
+            List<AnimalData> animalDataList = AnimalBehaviorList.Select(x => x.animalData).ToList();
+            // Convert the list to JSON and save it
+            AnimalDataWrapper animalWrapperSave = new(animalDataList, _timeSinceStart);
+            wrapperHolder.list.Add(animalWrapperSave);
+            ExportToJson(wrapperHolder, _filePath);
+        }
+
+        public void SetTimeScale(float timeScale) => Time.timeScale = timeScale;
     }
 }

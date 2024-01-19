@@ -2,6 +2,7 @@ using System.Linq;
 using _Scripts.AliveObjects.Behaviors;
 using _Scripts.ScriptableObjects;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 using static _Scripts.Utils.HelperMethods;
 
@@ -10,7 +11,7 @@ namespace _Scripts.AliveObjects
     [SelectionBase]
     public class AnimalBehavior : MonoBehaviour
     {
-        public AnimalData AnimalData;
+        public AnimalData animalData;
 
         [SerializeField] private Animator animator;
         [SerializeField] private float timeUntilDestroy = 4f;
@@ -28,13 +29,13 @@ namespace _Scripts.AliveObjects
 
         private void Start()
         {
-            animator.speed = Map(AnimalData.Genes[0], 0f, 1f, 2f, 0.5f);
+            animator.speed = Map(animalData.Genes[0], 0f, 1f, 2f, 0.5f);
         }
 
         private void Update()
         {
             // Check if animal is dead
-            if (_isDead && !AnimalData.IsActive)
+            if (_isDead && !animalData.IsActive)
             {
                 _deadCountdown -= Time.deltaTime;
                 // Destroy animal after time runs out
@@ -44,30 +45,32 @@ namespace _Scripts.AliveObjects
                 return;
             }
 
-            _randomMoveBehavior.Update(ref AnimalData, Time.deltaTime);
+            _randomMoveBehavior.Update(ref animalData, Time.deltaTime);
             HandleStats();
             TryReproduce();
 
-            transform.position = AnimalData.Position;
-            transform.rotation = AnimalData.Rotation;
+            transform.position = animalData.Position;
+            transform.rotation = animalData.Rotation;
         }
 
         private void OnTriggerEnter(Collider other)
         {
             // Check if collided with grass and if can eat it
-            if (other.TryGetComponent(out Grass grass) && AnimalData.AnimalSo.canEatList.Contains(AliveObjectSo.Type.Grass))
+            if (other.TryGetComponent(out Grass grass) && animalData.AnimalSo.canEatList.Contains(AliveObjectSo.Type.Grass))
             {
-                AnimalData.Hunger += Mathf.InverseLerp(0, 100, grass.aliveObjectSo.hungerIncreaseWhenEaten) * 100;
+                animalData.Hunger += grass.aliveObjectSo.hungerIncreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
+                animalData.Hunger = Mathf.Clamp(grass.aliveObjectSo.hungerIncreaseWhenEaten, 0f, 100f);
                 Destroy(grass.gameObject);
+                AnimalManager.Instance.UpdateAliveObjectCount(AliveObjectSo.Type.Grass, -1);
             }
 
             // Check if collided with another animal and if can eat it 
-            if (other.TryGetComponent(out AnimalBehavior otherAnimal) && otherAnimal.AnimalData.IsActive &&
-                AnimalData.AnimalSo.canEatList.Contains(otherAnimal.AnimalData.Type))
+            if (other.TryGetComponent(out AnimalBehavior otherAnimal) && otherAnimal.animalData.IsActive &&
+                animalData.AnimalSo.canEatList.Contains(otherAnimal.animalData.Type))
             {
                 otherAnimal.Dead();
-                AnimalData.Hunger += otherAnimal.AnimalData.HungerIncreaseWhenEaten;
-                AnimalData.Hunger = Mathf.Clamp(AnimalData.Hunger, 0f, 100f);
+                animalData.Hunger += otherAnimal.animalData.HungerIncreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
+                animalData.Hunger = Mathf.Clamp(animalData.Hunger, 0f, 100f);
             }
         }
 
@@ -75,39 +78,39 @@ namespace _Scripts.AliveObjects
         {
             // Play dead animation
             animator.Play("Dead");
-            AnimalManager.Instance.UpdateAliveObjectCount(AnimalData.Type, -1);
-            AnimalManager.Instance.AnimalList.Remove(this);
+            AnimalManager.Instance.UpdateAliveObjectCount(animalData.Type, -1);
+            AnimalManager.Instance.AnimalBehaviorList.Remove(this);
             _isDead = true;
-            AnimalData.IsActive = false;
+            animalData.IsActive = false;
         }
 
         private void HandleStats()
         {
             // Check if animal is fully hungry and if so deactivate it
-            if (AnimalData.Hunger <= 0)
+            if (animalData.Hunger <= 0)
             {
                 Dead();
                 return;
             }
 
             // Update stats based on time since last update and decrease hunger
-            AnimalData.TimeAlive += Time.deltaTime;
-            AnimalData.Hunger -= AnimalData.HungerDecayRate * Time.deltaTime;
+            animalData.TimeAlive += Time.deltaTime;
+            animalData.Hunger -= animalData.HungerDecayRate * Time.deltaTime;
         }
 
         private void TryReproduce()
         {
             if (_isDead) return;
             // Check if animal can reproduce
-            AnimalData.ReproduceCooldown += Time.deltaTime;
-            if (AnimalData.ReproduceCooldown < AnimalData.TryReproduceRate) return;
-            AnimalData.ReproduceCooldown = 0;
-            float chance = Random.Range(0, 100f) + AnimalData.TimeAlive;
+            animalData.ReproduceCooldown += Time.deltaTime;
+            if (animalData.ReproduceCooldown < animalData.TryReproduceRate) return;
+            animalData.ReproduceCooldown = 0;
+            float chance = Mathf.Clamp(Random.Range(0, 100f) + animalData.TimeAlive, 0f, 100f);
             // Reproduce with 1% chance
-            if (chance < 1f)
+            if (chance >= 99f)
             {
-                AnimalData newAnimalData = AnimalData.Copy();
-                AnimalManager.Instance.AddNewAnimal(newAnimalData);
+                AnimalData newAnimalData = animalData.Copy();
+                AnimalManager.Instance.AddNewAnimal(ref newAnimalData);
             }
         }
     }
