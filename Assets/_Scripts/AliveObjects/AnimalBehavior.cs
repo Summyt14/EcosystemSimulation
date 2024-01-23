@@ -60,8 +60,8 @@ namespace _Scripts.AliveObjects
             {
                 animalData.Hunger -= grass.aliveObjectSo.hungerDecreaseWhenEaten;
                 animalData.Hunger = Mathf.Clamp(animalData.Hunger, 0f, 100f);
-                Destroy(grass.gameObject);
                 AnimalManager.Instance.UpdateAliveObjectCount(AliveObjectSo.Type.Grass, -1);
+                Destroy(grass.gameObject);
                 _hasEatenSomething = true;
             }
 

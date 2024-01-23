@@ -153,7 +153,10 @@ namespace _Scripts.AliveObjects
             if (!AliveObjectCount.ContainsKey(type))
                 AliveObjectCount.Add(type, amount);
             else
+            {
                 AliveObjectCount[type] += amount;
+                AliveObjectCount[type] = Mathf.Clamp(AliveObjectCount[type], 0, int.MaxValue);
+            }
 
             OnAliveObjectCountChanged?.Invoke();
         }
