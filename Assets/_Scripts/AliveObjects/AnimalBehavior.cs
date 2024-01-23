@@ -17,7 +17,7 @@ namespace _Scripts.AliveObjects
         [SerializeField] private float timeUntilDestroy = 4f;
 
         private float _deadCountdown;
-        private bool _isDead;
+        private bool _isDead, _hasEatenSomething;
         private RandomMoveBehavior _randomMoveBehavior;
 
         private void Awake()
@@ -58,20 +58,23 @@ namespace _Scripts.AliveObjects
             // Check if collided with grass and if can eat it
             if (other.TryGetComponent(out Grass grass) && animalData.AnimalSo.canEatList.Contains(AliveObjectSo.Type.Grass))
             {
-                animalData.Hunger -= grass.aliveObjectSo.hungerDecreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
-                animalData.Hunger = Mathf.Clamp(grass.aliveObjectSo.hungerDecreaseWhenEaten, 0f, 100f);
+                animalData.Hunger -= grass.aliveObjectSo.hungerDecreaseWhenEaten;
+                animalData.Hunger = Mathf.Clamp(animalData.Hunger, 0f, 100f);
                 Destroy(grass.gameObject);
                 AnimalManager.Instance.UpdateAliveObjectCount(AliveObjectSo.Type.Grass, -1);
+                _hasEatenSomething = true;
             }
 
             // Check if collided with another animal and if can eat it 
-            if (other.TryGetComponent(out AnimalBehavior otherAnimal) && otherAnimal.animalData.IsActive &&
+            else if (other.TryGetComponent(out AnimalBehavior otherAnimal) && otherAnimal.animalData.IsActive &&
                 animalData.AnimalSo.canEatList.Contains(otherAnimal.animalData.Type))
             {
                 otherAnimal.Dead();
-                animalData.Hunger -= otherAnimal.animalData.HungerDecreaseWhenEaten * AnimalManager.Instance.hungerDecayRate;
+                animalData.Hunger -= otherAnimal.animalData.HungerDecreaseWhenEaten;
                 animalData.Hunger = Mathf.Clamp(animalData.Hunger, 0f, 100f);
+                _hasEatenSomething = true;
             }
+            
         }
 
         public void Dead()
@@ -95,12 +98,12 @@ namespace _Scripts.AliveObjects
 
             // Update stats based on time since last update and decrease hunger
             animalData.TimeAlive += Time.deltaTime;
-            animalData.Hunger += animalData.HungerIncreaseRate * Time.deltaTime;
+            animalData.Hunger += animalData.HungerIncreaseRate * AnimalManager.Instance.hungerIncreaseMultiplier * Time.deltaTime;
         }
 
         private void TryReproduce()
         {
-            if (_isDead) return;
+            if (_isDead || !_hasEatenSomething) return;
             // Check if animal can reproduce
             animalData.ReproduceCooldown += Time.deltaTime;
             if (animalData.ReproduceCooldown < animalData.ReproduceRate) return;

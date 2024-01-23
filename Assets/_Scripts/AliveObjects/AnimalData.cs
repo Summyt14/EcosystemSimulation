@@ -17,7 +17,7 @@ namespace _Scripts.AliveObjects
         public float TimeAlive;
         public float Speed;
         public float Size;
-        public float ReproduceRate;
+        [NonSerialized] public float ReproduceRate;
         public float Fitness;
         [NonSerialized] public float Hunger;
         [NonSerialized] public bool IsActive;
@@ -55,7 +55,7 @@ namespace _Scripts.AliveObjects
 
             for (int i = 0; i < Genes.Length; i++)
                 Genes[i] = Random.Range(0f, 1f);
-            
+
             MapGenes();
         }
 
@@ -70,7 +70,7 @@ namespace _Scripts.AliveObjects
         public AnimalData Reproduce()
         {
             CalculateFitness();
-            float[] newGenes = Mutate(Genes, ReproduceRate);
+            float[] newGenes = Mutate(Genes, AnimalSo.mutationChance);
             AnimalData newAnimalData = new(AnimalSo, Position, Rotation, TargetDirection, ChangeDirectionCooldown)
             {
                 Genes = newGenes
@@ -85,12 +85,12 @@ namespace _Scripts.AliveObjects
             Fitness = Mathf.Max(0, fitness);
         }
 
-        private float[] Mutate(IReadOnlyList<float> parentGenes, float mutationRate)
+        private float[] Mutate(IReadOnlyList<float> parentGenes, float mutationChance)
         {
             float[] mutatedGenes = new float[parentGenes.Count];
             for (int i = 0; i < parentGenes.Count; i++)
             {
-                if (Random.Range(0, 100f) < mutationRate)
+                if (Random.Range(0, 100f) < mutationChance)
                     mutatedGenes[i] = Random.Range(0f, 1f);
                 else
                     mutatedGenes[i] = parentGenes[i];

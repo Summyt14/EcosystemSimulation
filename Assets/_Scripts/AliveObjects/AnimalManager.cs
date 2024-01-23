@@ -5,6 +5,7 @@ using System.Linq;
 using _Scripts.ScriptableObjects;
 using _Scripts.Utils;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 using static _Scripts.Utils.HelperMethods;
 
@@ -21,7 +22,7 @@ namespace _Scripts.AliveObjects
         [SerializeField] private AliveObjectSo[] aliveObjectSoList;
         [SerializeField] public int boundsWidth = 20;
         [SerializeField] public int boundsHeight = 20;
-        [SerializeField] public float hungerDecayRate = 1f;
+        [SerializeField] public float hungerIncreaseMultiplier = 1f;
         [SerializeField] private float exportInterval = 1f;
         [SerializeField] private string fileName = "animal_data";
 
@@ -43,6 +44,7 @@ namespace _Scripts.AliveObjects
             AnimalBehaviorList = new List<AnimalBehavior>();
             AliveObjectCount = new Dictionary<AliveObjectSo.Type, int>();
             _filePath = $"{Application.dataPath}/JsonFiles/{fileName}.json";
+            _exportTimer = 100f;
         }
 
         private void Start()
@@ -168,7 +170,7 @@ namespace _Scripts.AliveObjects
             
             List<AnimalData> animalDataList = AnimalBehaviorList.Select(x => x.animalData).ToList();
             // Convert the list to JSON and save it
-            AnimalDataWrapper animalWrapperSave = new(animalDataList, _timeSinceStart);
+            AnimalDataWrapper animalWrapperSave = new(animalDataList, _timeSinceStart, AliveObjectCount);
             wrapperHolder.list.Add(animalWrapperSave);
             ExportToJson(wrapperHolder, _filePath);
         }

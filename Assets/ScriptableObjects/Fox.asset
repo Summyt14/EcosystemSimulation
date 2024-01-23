@@ -15,9 +15,9 @@ MonoBehaviour:
   prefab: {fileID: 2206800068340054933, guid: 52eb84853498cff4c9582f2e184258fd, type: 3}
   type: 0
   canEatList: 01000000
-  initialCount: 5
-  hungerDecreaseWhenEaten: 50
-  tryReproduceRate: 1
-  reproduceChance: 2
-  mutationChance: 1
+  initialCount: 20
+  hungerDecreaseWhenEaten: 100
+  tryReproduceRate: 5
+  reproduceChance: 15
+  mutationChance: 5
   initialRotationSpeed: 2

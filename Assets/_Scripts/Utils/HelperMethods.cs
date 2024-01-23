@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using _Scripts.AliveObjects;
+using _Scripts.ScriptableObjects;
 using UnityEngine;
 
 namespace _Scripts.Utils
@@ -14,7 +15,7 @@ namespace _Scripts.Utils
             float c = y1 - m * x1;
             return m * x + c;
         }
-        
+
         public static T ReadFromJson<T>(string path)
         {
             string json = File.ReadAllText(path);
@@ -36,17 +37,23 @@ namespace _Scripts.Utils
         public WrapperHolder() => list = new List<AnimalDataWrapper>();
         public WrapperHolder(List<AnimalDataWrapper> list) => this.list = list;
     }
-    
+
     [Serializable]
     public class AnimalDataWrapper
     {
         public List<AnimalData> animals;
         public float timeSinceStart;
+        public int foxCount;
+        public int chickenCount;
+        public int grassCount;
 
-        public AnimalDataWrapper(List<AnimalData> animals, float timeSinceStart)
+        public AnimalDataWrapper(List<AnimalData> animals, float timeSinceStart, Dictionary<AliveObjectSo.Type, int> animalCount)
         {
             this.animals = animals;
             this.timeSinceStart = timeSinceStart;
+            foxCount = animalCount[AliveObjectSo.Type.Fox];
+            chickenCount = animalCount[AliveObjectSo.Type.Chicken];
+            grassCount = animalCount[AliveObjectSo.Type.Grass];
         }
     }
 }
